@@ -1,83 +1,79 @@
-<!DOCTYPE html> 
-<html lang="en"> 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scatter Chart</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.1.2/chart.umd.js"></script>
+</head>
+<body>
+  <div>
+    <h1 style="color:rgb(45, 185, 164)">Simple Plot</h1>
+    <h2>Chart JS Scatter Chart 1</h2>
+    <div>
+      <canvas id="visitorsChart" width="700" height="300"></canvas>
+    </div>
+  </div>
 
-<head> 
-	<meta charset="UTF-8"> 
-	<meta name="viewport" content= 
-		"width=device-width, initial-scale=1.0"> 
-	<title>Scatter Chart</title> 
-	<script src= 
-"https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"> 
-	</script> 
-	<script src= 
-"https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.1.2/chart.umd.js"> 
-	</script> 
-</head> 
+  <!-- load your data -->
+  <script src="datascript.js"></script>
 
-<body> 
-	<div> 
-		<h1 style="color:rgb(73, 85, 186)"> 
-			Simple Plot 
-		</h1> 
-		
-		<h2>Chart JS Scatter Chart 1</h2> 
-		
-		<div> 
-			<canvas id="visitorsChart"
-				width="700" height="300"></canvas> 
-		</div> 
-	</div> 
-<script src="datascript.js"> </script> 
-	<script> 
+  <script>
+    const config = {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: 'MSDV',
+          data: visitorsData,
+          // ─── scriptable color callback ───
+          backgroundColor: ctx => {
+            const y = ctx.raw.y;
+            if (y <= 3) return 'green';
+            if (y <= 5) return 'yellow';
+            return 'red';
+          },
+        }],
+      },
+      options: {
+        scales: {
+          x: {
+            type: 'category',
+            labels: visitorsData.map(d => d.x),
+            title: {
+              display: true,
+              text: 'Date',
+            },
+          },
+          y: {
+            type: 'linear',
+            min: 0,
+            max: 8,
+            title: {
+              display: true,
+              text: 'Number (0–8)',
+            },
+          },
+        },
+        elements: {
+          point: {
+            radius: 8,
+            hoverRadius: 10,
+          },
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: 'Motion Sickness Dose Values at Center of Gravity',
+          },
+        },
+      },
+    };
 
-
-		const config = { 
-			type: 'scatter', 
-			data: { 
-				datasets: [{ 
-					label: 'Visitors Data', 
-					data: visitorsData, 
-					backgroundColor: 'rgba(75, 192, 192, 0.7)', 
-				}], 
-			}, 
-			options: { 
-				scales: { 
-					x: { 
-						type: 'linear', 
-						position: 'bottom', 
-						title: { 
-							display: true, 
-							text: 'Months', 
-						}, 
-					}, 
-					y: { 
-						type: 'linear', 
-						position: 'left', 
-						title: { 
-							display: true, 
-							text: 'Number of Visitors', 
-						}, 
-					}, 
-				}, 
-				elements: { 
-					point: { 
-						radius: 8, 
-						hoverRadius: 10, 
-					}, 
-				}, 
-				plugins: { 
-					title: { 
-						display: true, 
-						text: 'GeeksforGeeks Monthly Visitors', 
-					}, 
-				}, 
-			}, 
-		}; 
-		const ctx = document.getElementById( 
-			'visitorsChart').getContext('2d'); 
-			
-		new Chart(ctx, config); 
-	</script> 
-</body> 
-
+    const ctx = document
+      .getElementById('visitorsChart')
+      .getContext('2d');
+    new Chart(ctx, config);
+  </script>
+</body>
 </html>
