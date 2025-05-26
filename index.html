@@ -1,10 +1,281 @@
 <!DOCTYPE html>
-<html>
-<body>
-<title> Micaela´s Dashboards</title>
-<h1>Initial Dashboard</h1>
-  <p><a href = "initial_code/index.html">May 23rd Kick-Off </a>
- <p>Next ones...</p>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JONSWAP Wave Spectrum & RAO</title>
 
+  <!-- ===========================
+       Load Chart.js core library
+       =========================== -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.1.2/chart.umd.js"></script>
+  <!-- =====================================
+       Load the annotation plugin for Chart.js
+       (auto-registers itself)
+       ===================================== -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.1/dist/chartjs-plugin-annotation.min.js"></script>
+
+  <style>
+    /* --------------------
+       Page & Container
+       -------------------- */
+    body {
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    #container {
+      width: 900px;
+    }
+
+    /* --------------------
+       Titles styling
+       -------------------- */
+    h1 {
+      text-align: center;
+      margin: 0;
+      color: rgb(45, 185, 164);
+      font-size: 24px;
+    }
+    h2 {
+      text-align: center;
+      margin: 5px 0 20px;
+      font-size: 18px;
+    }
+    /* --------------------
+       RAO charts wrapper
+       -------------------- */
+    .chart-row {
+      display: flex;
+      gap: 20px;
+      margin-top: 40px;
+    }
+    .chart-box {
+      flex: 1;
+    }
+    .chart-box h3 {
+      text-align: center;
+      margin-bottom: 0;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <!-- Main chart title -->
+    <h1 id="mainTitle">JONSWAP Wave Spectrum</h1>
+    <!-- Subtitle (populated via JS) -->
+    <h2 id="subTitle"></h2>
+    <!-- Spectrum chart canvas -->
+    <canvas id="spectrumChart" width="900" height="400"></canvas>
+
+    <!-- Section heading for RAOs -->
+    <h1 class="mainTitle">Response Amplitude Operators</h1>
+
+    <!-- Heave RAO charts side-by-side -->
+    <div class="chart-row">
+      <div class="chart-box">
+        <h3>Heave Amplitude</h3>
+        <canvas id="raoAmpChart" width="400" height="300"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Heave Phase</h3>
+        <canvas id="raoPhaseChart" width="400" height="300"></canvas>
+      </div>
+    </div>
+
+    <!-- Pitch RAO charts side-by-side -->
+    <div class="chart-row">
+      <div class="chart-box">
+        <h3>Pitch Amplitude</h3>
+        <canvas id="raoPitchAmpChart" width="400" height="300"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Pitch Phase</h3>
+        <canvas id="raoPitchPhaseChart" width="400" height="300"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================
+       Load your data & metadata file
+       This file must define:
+         • spectrumData
+         • timeStamp, Hs, Tp, peakOmega
+         • raoAmplitudeData, raoPhaseData
+         • raoPitchAmplitudeData, raoPitchPhaseData
+       ================================ -->
+  <script src="datascript.js"></script>
+
+  <script>
+    // ---------------------------------------------------
+    // 1) Populate titles for the spectrum chart
+    // ---------------------------------------------------
+    document.getElementById("mainTitle").innerText =
+      `JONSWAP Wave Spectrum`;
+    document.getElementById("subTitle").innerText =
+      `Hₛ = ${Hs.toFixed(2)} m, Tₚ = ${Tp.toFixed(2)} s, DateTime = ${timeStamp}`;
+
+    // ---------------------------------------------------
+    // 2) Draw the JONSWAP spectrum line chart
+    // ---------------------------------------------------
+    const specCtx = document.getElementById('spectrumChart').getContext('2d');
+    new Chart(specCtx, {
+      type: 'line',
+      data: {
+        datasets: [{
+          data: spectrumData,
+          borderColor: 'blue',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            type: 'linear',
+            position: 'bottom',
+            title: { display: true, text: 'Angular Frequency ω [rad/s]', font: { size: 14 } },
+            grid: { display: true }
+          },
+          y: {
+            title: { display: true, text: 'Spectral Density S(ω) [m²/(rad/s)]', font: { size: 14 } },
+            grid: { display: true }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          annotation: {
+            annotations: {
+              peakLine: {
+                type: 'line',
+                xMin: peakOmega,
+                xMax: peakOmega,
+                borderColor: 'black',
+                borderWidth: 1,
+                borderDash: [5, 5],
+                label: {
+                  display: true,
+                  content: `ωₚ = ${peakOmega.toFixed(2)} rad/s`,
+                  position: 'end',
+                  backgroundColor: 'rgba(255,255,255,0.8)',
+                  color: 'black',
+                  font: { size: 12, weight: 'bold' },
+                  yAdjust: 6
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // ---------------------------------------------------
+    // 3) Draw the Heave RAO (Amplitude)
+    // ---------------------------------------------------
+    const ampCtx = document.getElementById('raoAmpChart').getContext('2d');
+    new Chart(ampCtx, {
+      type: 'line',
+      data: {
+        datasets: [{
+          label: 'Amplitude',
+          data: raoAmplitudeData,
+          borderColor: 'green',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { type: 'linear', title: { display: true, text: 'Frequency ω [rad/s]' } },
+          y: { title: { display: true, text: 'Amplitude [m/m]' } }
+        },
+        plugins: { legend: { display: true } }
+      }
+    });
+
+    // ---------------------------------------------------
+    // 4) Draw the Heave RAO (Phase)
+    // ---------------------------------------------------
+    const phaseCtx = document.getElementById('raoPhaseChart').getContext('2d');
+    new Chart(phaseCtx, {
+      type: 'line',
+      data: {
+        datasets: [{
+          label: 'Phase',
+          data: raoPhaseData,
+          borderColor: 'red',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { type: 'linear', title: { display: true, text: 'Frequency ω [rad/s]' } },
+          y: { title: { display: true, text: 'Phase [°]' } }
+        },
+        plugins: { legend: { display: true } }
+      }
+    });
+
+    // ---------------------------------------------------
+    // 5) Draw the Pitch RAO (Amplitude)
+    // ---------------------------------------------------
+    const pitchAmpCtx = document.getElementById('raoPitchAmpChart').getContext('2d');
+    new Chart(pitchAmpCtx, {
+      type: 'line',
+      data: {
+        datasets: [{
+          label: 'Pitch Amplitude',
+          data: raoPitchAmplitudeData,
+          borderColor: 'purple',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { type: 'linear', title: { display: true, text: 'Frequency ω [rad/s]' } },
+          y: { title: { display: true, text: 'Amplitude [rad/(rad)]' } }
+        },
+        plugins: { legend: { display: true } }
+      }
+    });
+
+    // ---------------------------------------------------
+    // 6) Draw the Pitch RAO (Phase)
+    // ---------------------------------------------------
+    const pitchPhaseCtx = document.getElementById('raoPitchPhaseChart').getContext('2d');
+    new Chart(pitchPhaseCtx, {
+      type: 'line',
+      data: {
+        datasets: [{
+          label: 'Pitch Phase',
+          data: raoPitchPhaseData,
+          borderColor: 'orange',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { type: 'linear', title: { display: true, text: 'Frequency ω [rad/s]' } },
+          y: { title: { display: true, text: 'Phase [°]' } }
+        },
+        plugins: { legend: { display: true } }
+      }
+    });
+  </script>
 </body>
 </html>
