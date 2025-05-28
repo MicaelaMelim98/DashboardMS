@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>JONSWAP Wave Spectrum & RAO</title>
-
   <!-- ===========================
        Load Chart.js core library
        =========================== -->
@@ -14,7 +13,6 @@
        (auto-registers itself)
        ===================================== -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.1/dist/chartjs-plugin-annotation.min.js"></script>
-
   <style>
     /* --------------------
        Page & Container
@@ -28,7 +26,6 @@
     #container {
       width: 900px;
     }
-
     /* --------------------
        Titles styling
        -------------------- */
@@ -69,10 +66,8 @@
     <h2 id="subTitle"></h2>
     <!-- Spectrum chart canvas -->
     <canvas id="spectrumChart" width="900" height="400"></canvas>
-
     <!-- Section heading for RAOs -->
     <h1 class="mainTitle">Response Amplitude Operators</h1>
-
     <!-- Heave RAO charts side-by-side -->
     <div class="chart-row">
       <div class="chart-box">
@@ -84,7 +79,6 @@
         <canvas id="raoPhaseChart" width="400" height="300"></canvas>
       </div>
     </div>
-
     <!-- Pitch RAO charts side-by-side -->
     <div class="chart-row">
       <div class="chart-box">
@@ -96,8 +90,15 @@
         <canvas id="raoPitchPhaseChart" width="400" height="300"></canvas>
       </div>
     </div>
-  </div>
-
+    <!-- ------------------------------
+         Total Vertical Motion PSD
+         ------------------------------ -->
+    <h1>Total Vertical Motion Power Spectral Density</h1>
+    <canvas id="verticalPSDChart" width="900" height="400"></canvas>
+        <!-- New MSDV Bar Chart Section -->
+    <h1>MSDV at Various Positions Relative to Center of Gravity (COG)</h1>
+    <canvas id="msdvBarChart" width="900" height="400"></canvas>
+  </div> <!-- end #container -->
   <!-- ================================
        Load your data & metadata file
        This file must define:
@@ -105,9 +106,10 @@
          • timeStamp, Hs, Tp, peakOmega
          • raoAmplitudeData, raoPhaseData
          • raoPitchAmplitudeData, raoPitchPhaseData
+         • verticalPSDDataMinus30, verticalPSDDataMinus15,
+           verticalPSDData0, verticalPSDData15, verticalPSDData30
        ================================ -->
   <script src="datascript.js"></script>
-
   <script>
     // ---------------------------------------------------
     // 1) Populate titles for the spectrum chart
@@ -116,7 +118,6 @@
       `JONSWAP Wave Spectrum`;
     document.getElementById("subTitle").innerText =
       `Hₛ = ${Hs.toFixed(2)} m, Tₚ = ${Tp.toFixed(2)} s, DateTime = ${timeStamp}`;
-
     // ---------------------------------------------------
     // 2) Draw the JONSWAP spectrum line chart
     // ---------------------------------------------------
@@ -172,7 +173,6 @@
         }
       }
     });
-
     // ---------------------------------------------------
     // 3) Draw the Heave RAO (Amplitude)
     // ---------------------------------------------------
@@ -198,7 +198,6 @@
         plugins: { legend: { display: true } }
       }
     });
-
     // ---------------------------------------------------
     // 4) Draw the Heave RAO (Phase)
     // ---------------------------------------------------
@@ -224,7 +223,6 @@
         plugins: { legend: { display: true } }
       }
     });
-
     // ---------------------------------------------------
     // 5) Draw the Pitch RAO (Amplitude)
     // ---------------------------------------------------
@@ -250,7 +248,6 @@
         plugins: { legend: { display: true } }
       }
     });
-
     // ---------------------------------------------------
     // 6) Draw the Pitch RAO (Phase)
     // ---------------------------------------------------
@@ -276,6 +273,125 @@
         plugins: { legend: { display: true } }
       }
     });
+    // ---------------------------------------------------
+    // 7) Draw the Total Vertical Motion Power Spectral Density
+    // ---------------------------------------------------
+    const vertCtx = document.getElementById('verticalPSDChart').getContext('2d');
+    new Chart(vertCtx, {
+      type: 'line',
+      data: {
+        datasets: [
+          {
+            label: 'L = -30 m',
+            data: verticalPSDDataMinus30,
+            borderColor: 'blue',
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false
+          },
+          {
+            label: 'L = -15 m',
+            data: verticalPSDDataMinus15,
+            borderColor: 'orange',
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false
+          },
+          {
+            label: 'L = 0 m',
+            data: verticalPSDData0,
+            borderColor: 'gold',
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false
+          },
+          {
+            label: 'L = 15 m',
+            data: verticalPSDData15,
+            borderColor: 'purple',
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false
+          },
+          {
+            label: 'L = 30 m',
+            data: verticalPSDData30,
+            borderColor: 'green',
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Date Time stamp goes here',
+            font: { size: 18 }
+          },
+          legend: {
+            display: true,
+            position: 'top'
+          }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            position: 'bottom',
+            title: { display: true, text: 'ω (rad/s)', font: { size: 14 } },
+            grid: { display: true }
+          },
+          y: {
+            title: { display: true, text: 'PSD (m²/s⁵)', font: { size: 14 } },
+            grid: { display: true }
+          }
+        }
+      }
+    });
+      // ---------------------------------------------------
+  // 8) Draw the MSDV bar chart
+  // ---------------------------------------------------
+  const msdvCtx = document.getElementById('msdvBarChart').getContext('2d');
+  new Chart(msdvCtx, {
+    type: 'bar',
+    data: {
+      labels: msdvPositions,
+      datasets: [{
+        label: 'MSDV_L',
+        data: msdvValues,
+        barThickness: 20, 
+        backgroundColor: msdvPositions.map(pos => {
+          if (pos === '15 m' || pos === '-15 m') return 'rgba(255, 99, 132, 0.8)';   // pink
+          if (pos === '30 m' || pos === '-30 m') return 'rgba(54, 162, 235, 0.8)';   // blue
+          return 'rgba(255, 206, 86, 0.8)';                      // all others
+        }),
+        borderColor: 'rgba(0, 0, 0, 0.1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Date Time Stamp goes here',
+          font: { size: 18 }
+        },
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Position relative to COG', font: { size: 14 } }
+        },
+        y: {
+          title: { display: true, text: 'MSDV_L', font: { size: 14 } },
+          beginAtZero: true
+        }
+      }
+    }
+});
   </script>
 </body>
 </html>
