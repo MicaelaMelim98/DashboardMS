@@ -13,7 +13,7 @@ class Sensor1 {
 
         try {
             console.log('Fetching CSV data...');
-            const response = await fetch('./era5Data copy.csv');
+            const response = await fetch('era5Data copy.csv');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -123,7 +123,7 @@ class Sensor2 {
 
         try {
             console.log('Fetching vessel CSV data...');
-            const response = await fetch('./five_minute_batch copy.csv');
+            const response = await fetch('five_minute_batch copy.csv');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
