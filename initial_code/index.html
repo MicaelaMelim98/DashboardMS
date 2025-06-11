@@ -8,7 +8,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.1.2/chart.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <!-- Load Plotly.js -->
+  <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+  <!-- Load application scripts -->
   <script src="datascript.js"></script>
+  <script src="jonswap.js"></script>
+  <script src="responseamplitudeoperator.js"></script>
   <!-- Same styles as original -->
   <style>
     body {
@@ -45,9 +50,12 @@
     .chart-row {
       display: flex;
       gap: 20px;
-      margin: 0;
+      margin: 0 0 20px 0;
     }
-    .chart-box { flex: 1; }
+    .chart-box { 
+      flex: 1;
+      min-height: 300px;
+    }
     .chart-box h3 {
       margin-top: 0;
       margin-bottom: 12px;
@@ -69,6 +77,14 @@
     .controls button:disabled {
       background-color: #ccc;
       cursor: not-allowed;
+    }
+    /* RAO Chart Styles */
+    #heaveAmplitudeChart,
+    #heavePhaseChart,
+    #pitchAmplitudeChart,
+    #pitchPhaseChart {
+      width: 100%;
+      height: 300px;
     }
   </style>
 </head>
@@ -97,6 +113,12 @@
       </div>
     </div>
 
+      <!-- Jonswap live data section -->
+  <div class="chart-box" style="max-width: 900px; margin: 0 auto;">
+      <h3>JONSWAP Spectrum</h3>
+      <canvas id="jonswapChart" width="900" height="400"></canvas>
+  </div>
+
     <!-- Sensor2 Live Data Section -->
     <div class="chart-section">
       <h1>Sensor2 Data</h1>
@@ -116,47 +138,41 @@
       </div>
     </div>
 
+    <!-- RAO Section -->
+    <div class="chart-section">
+      <h1>Response Amplitude Operators (RAO)</h1>
+      <div class="chart-row">
+        <div class="chart-box">
+          <h3>Heave Amplitude</h3>
+          <div id="heaveAmplitudeChart"></div>
+        </div>
+        <div class="chart-box">
+          <h3>Heave Phase</h3>
+          <div id="heavePhaseChart"></div>
+        </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-box">
+          <h3>Pitch Amplitude</h3>
+          <div id="pitchAmplitudeChart"></div>
+        </div>
+        <div class="chart-box">
+          <h3>Pitch Phase</h3>
+          <div id="pitchPhaseChart"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- JONSWAP Spectrum Section -->
     <h1 id="mainTitle"></h1>
     <h2 id="subTitle"></h2>
     <canvas id="spectrumChart" width="900" height="400"></canvas>
-
-    <!-- RAO Section -->
-    <h1>Response Amplitude Operators</h1>
-    <div class="chart-row">
-      <div class="chart-box">
-        <h3>Heave Amplitude</h3>
-        <canvas id="raoAmpChart" width="400" height="300"></canvas>
-      </div>
-      <div class="chart-box">
-        <h3>Heave Phase</h3>
-        <canvas id="raoPhaseChart" width="400" height="300"></canvas>
-      </div>
-    </div>
-    <div class="chart-row">
-      <div class="chart-box">
-        <h3>Pitch Amplitude</h3>
-        <canvas id="raoPitchAmpChart" width="400" height="300"></canvas>
-      </div>
-      <div class="chart-box">
-        <h3>Pitch Phase</h3>
-        <canvas id="raoPitchPhaseChart" width="400" height="300"></canvas>
-      </div>
-    </div>
-
-    <!-- Vertical Motion PSD Section -->
-    <h1>Total Vertical Motion Power Spectral Density</h1>
-    <canvas id="verticalPSDChart" width="900" height="400"></canvas>
-
-    <!-- MSDV Section -->
-    <h1>MSDV at Various Positions Relative to Center of Gravity (COG)</h1>
-    <canvas id="msdvBarChart" width="900" height="400"></canvas>
-  </div>
-
+  </div> <!-- Close container -->
+  
   <script>
     // Create sensor instances at the start
-    const sensor1 = new Sensor1();
-    const sensor2 = new Sensor2();
+    window.sensor1 = new Sensor1();
+    window.sensor2 = new Sensor2();
     
     // Initialize charts
     let waveHeightChart, wavePeriodChart, waveDirectionChart;
@@ -165,6 +181,11 @@
     let streamingInterval2 = null;
 
     function initializeSensor1Charts() {
+      // Initialize JONSWAP spectrum
+      if (sensor1.jonswapSpectrum) {
+        sensor1.jonswapSpectrum.initChart();
+      }
+
       const commonConfig = {
         type: 'line',
         options: {
@@ -362,6 +383,9 @@
         waveDirectionChart.data.datasets[0].data.shift();
       }
 
+      // Update JONSWAP spectrum with the full reading object (including timestamp)
+      sensor1.jonswapSpectrum.update(reading);
+
       // Update all charts
       waveHeightChart.update('none');
       wavePeriodChart.update('none');
@@ -394,6 +418,11 @@
       // Update all charts
       vesselHeadingChart.update('none');
       vesselSpeedChart.update('none');
+
+      // Update RAO charts if initialized
+      if (window.raoVisualizer) {
+        window.raoVisualizer.updateCharts(reading.speed, reading.heading);
+      }
     }
 
     // Start/Stop button handlers for Sensor1
@@ -457,6 +486,11 @@
     initializeSensor2Charts();
     document.getElementById('stopBtn1').disabled = true;
     document.getElementById('stopBtn2').disabled = true;
+
+    // Initialize RAO Visualizer
+    if (window.raoVisualizer) {
+        window.raoVisualizer.init();
+    }
 
     // Initialize titles
     document.getElementById('mainTitle').innerText = 'JONSWAP Wave Spectrum';
@@ -748,6 +782,11 @@
           }
         }
       }
+    });
+
+    // Initialize the RAO visualizer when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      raoVisualizer.init();
     });
   </script>
 </body>
