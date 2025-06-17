@@ -9,7 +9,10 @@ class RAOVisualizer {
             pitchAmplitude: null,
             pitchPhase: null
         };
-        this.RAO_BASE_PATH = 'data/SAAII_RAOs copy';
+        this.RAO_BASE_PATH = 'SAAII_RAOs copy';
+        // Add storage for latest RAO data
+        this.latestHeaveData = null;
+        this.latestPitchData = null;
     }
 
     init() {
@@ -38,7 +41,7 @@ class RAOVisualizer {
                 yaxis: { 
                     title: 'Magnitude [m/m]',
                     rangemode: 'tozero',
-                    range: [0, 1.5],  // Match MATLAB graph range
+                    range: [0, 2.0],  // Further extended range
                     dtick: 0.5
                 } 
             }
@@ -65,7 +68,7 @@ class RAOVisualizer {
                 yaxis: { 
                     title: 'Magnitude [rad/m]',
                     rangemode: 'tozero',
-                    range: [0, 1.5],
+                    range: [0, 2.0], // Further extended range
                     dtick: 0.5
                 }
             }
@@ -253,6 +256,15 @@ class RAOVisualizer {
         });
     }
 
+    // Add getter methods for the latest data
+    getLatestHeaveData() {
+        return this.latestHeaveData;
+    }
+
+    getLatestPitchData() {
+        return this.latestPitchData;
+    }
+
     async updateCharts(speed, heading) {
         if (speed === this.currentSpeed && heading === this.currentHeading) return;
         
@@ -265,11 +277,13 @@ class RAOVisualizer {
         const pitchData = await this.loadRAOFile('pitch', speedInt, this.currentHeading);
 
         if (heaveData) {
+            this.latestHeaveData = heaveData; // Store latest heave data
             this.updateChart('heaveAmplitudeChart', heaveData.periods, heaveData.amplitudes);
             this.updateChart('heavePhaseChart', heaveData.periods, heaveData.phases);
         }
 
         if (pitchData) {
+            this.latestPitchData = pitchData; // Store latest pitch data
             this.updateChart('pitchAmplitudeChart', pitchData.periods, pitchData.amplitudes);
             this.updateChart('pitchPhaseChart', pitchData.periods, pitchData.phases);
         }

@@ -10,163 +10,920 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.1/dist/chartjs-plugin-annotation.min.js"></script>
   <!-- Load Plotly.js -->
   <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+  <!-- Load Leaflet for maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Load application scripts -->
   <script src="datascript.js"></script>
   <script src="jonswap.js"></script>
   <script src="responseamplitudeoperator.js"></script>
+  <script src="powerspectraldensity.js"></script>
+  <script src="bridge.js"></script>
   <!-- Same styles as original -->
   <style>
     body {
-      font-family: sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
       justify-content: center;
       padding: 20px;
+      background-color: white;
     }
-    #container { width: 900px; }
-    h1 {
+    #container { 
+      width: 95%; 
+      max-width: 1200px;
+    }
+    
+    /* Credit Section Styles */
+    #dashboard-credit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      max-width: 1100px;
+      margin: 0 auto 30px auto;
+      padding: 20px 30px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e8eaed;
       text-align: center;
-      margin-top: 40px;
-      margin-bottom: 10px;
+    }
+    #dashboard-credit h1 {
+      font-size: 28px;
+      font-weight: 600;
       color: rgb(45, 185, 164);
-      font-size: 24px;
+      margin-bottom: 15px;
+      margin-top: 0;
+      line-height: 1.2;
+      padding-bottom: 10px;
+      border-bottom: 3px solid rgb(45, 185, 164);
     }
-    h1:first-child { margin-top: 0; }
-    h2 {
-      text-align: center;
-      margin: 0 0 24px 0;
+    #dashboard-credit .credit-authors {
       font-size: 18px;
+      font-weight: 500;
+      color: #34495e;
+      margin-bottom: 10px;
+      margin-top: 0;
     }
-    h3 {
-      text-align: center;
-      margin-top: 16px;
-      margin-bottom: 12px;
+    #dashboard-credit .credit-affiliations {
       font-size: 16px;
+      color: #34495e;
+      margin-bottom: 8px;
+      margin-top: 0;
     }
-    .chart-section { margin-bottom: 48px; }
-    canvas {
-      display: block;
-      margin: 0 auto 24px auto;
+    #dashboard-credit .credit-affiliations a {
+      color: rgb(45, 185, 164);
+      text-decoration: none;
+      font-weight: 500;
     }
+    #dashboard-credit .credit-affiliations a:hover {
+      text-decoration: underline;
+    }
+    #dashboard-credit .credit-corresponding {
+      font-size: 16px;
+      color: #34495e;
+      margin-bottom: 0;
+      margin-top: 0;
+    }
+    @media (max-width: 768px) {
+      #dashboard-credit h1 {
+        font-size: 24px;
+      }
+      #dashboard-credit .credit-authors {
+        font-size: 16px;
+      }
+      #dashboard-credit .credit-affiliations,
+      #dashboard-credit .credit-corresponding {
+        font-size: 14px;
+      }
+    }
+    
+    /* Research View Headings */
+    #researchView h1 {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 25px;
+      color: rgb(45, 185, 164);
+      font-size: 28px;
+      font-weight: 600;
+      padding-bottom: 10px;
+      border-bottom: 3px solid rgb(45, 185, 164);
+    }
+    #researchView h2 {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #2c3e50;
+      font-size: 24px;
+      font-weight: 600;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #bdc3c7;
+    }
+    #researchView h3 {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 18px;
+      color: #34495e;
+      font-weight: 500;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #ecf0f1;
+    }
+    
+    /* Chart Sections and Layout */
+    .chart-section, .jonswap-section {
+      margin-bottom: 45px;
+      padding: 30px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e8eaed;
+    }
+    
     .chart-row {
       display: flex;
-      gap: 20px;
-      margin: 0 0 20px 0;
+      gap: 30px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
     }
+    
     .chart-box { 
       flex: 1;
-      min-height: 300px;
+      min-width: 300px;
+      min-height: 380px;
+      max-height: 520px;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+      border: 1px solid #e8eaed;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .chart-box.full-width {
+      flex-basis: 100%;
+      min-width: 48%;
+      max-width: 48%;
+      margin: 0 auto;
+      max-height: 380px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #waveDirectionChart {
+      display: block;
+      margin: 0 auto;
+      width: 100% !important;
+      max-width: 100% !important;
+      height: 320px !important;
+      max-height: 320px !important;
+      overflow: hidden;
     }
     .chart-box h3 {
       margin-top: 0;
-      margin-bottom: 12px;
+      margin-bottom: 15px;
+      flex-shrink: 0;
+    }
+    
+    /* Canvas and Chart Containers */
+    canvas {
+      display: block;
+      margin: 0 auto;
+      max-width: 100% !important;
+      max-height: 320px !important;
+      flex-grow: 1;
+      overflow: hidden;
+    }
+    
+    .chart-box > div[id*="Chart"], 
+    .chart-box > div[id*="PSD"], 
+    .chart-box > div[id*="msdv"] {
+      flex-grow: 1;
+      max-height: 450px !important;
+      overflow: hidden;
     }
     .controls {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
+      padding: 20px 0;
     }
     .controls button {
-      padding: 8px 20px;
-      margin: 0 10px;
+      padding: 12px 24px;
+      margin: 0 15px;
       font-size: 16px;
+      font-weight: 600;
       cursor: pointer;
       background-color: rgb(45, 185, 164);
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(45, 185, 164, 0.3);
+    }
+    .controls button:hover:not(:disabled) {
+      background-color: rgb(35, 165, 144);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(45, 185, 164, 0.4);
     }
     .controls button:disabled {
       background-color: #ccc;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
-    /* RAO Chart Styles */
+    
+    /* Specific Chart Heights for Plotly */
     #heaveAmplitudeChart,
     #heavePhaseChart,
     #pitchAmplitudeChart,
     #pitchPhaseChart {
+      height: 320px !important;
+      width: 100% !important;
+    }
+    
+    /* Power Spectral Density Charts - Increased Height */
+    #combinedPSDChart,
+    #verticalMotionPSDChart,
+    #msdvChart {
+      height: 450px !important;
+      width: 100% !important;
+    }
+
+    /* PSD Chart Containers - Make them narrower but keep tall */
+    .chart-box.psd-chart {
+      flex-basis: 70% !important;
+      min-width: 70% !important;
+      max-width: 70% !important;
+      margin: 0 auto;
+    }
+
+    /* JONSWAP Chart Container - Make it taller */
+    .chart-box.jonswap-chart {
+      max-width: 1100px;
+      min-width: 0;
       width: 100%;
-      height: 300px;
+      margin: 0 auto;
+      min-height: 450px !important;
+      max-height: 520px !important;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 24px 24px 24px;
+      box-sizing: border-box;
+    }
+    #jonswapChart {
+      display: block;
+      margin: 0 auto;
+      width: 100% !important;
+      max-width: 100% !important;
+      height: 390px !important;
+      max-height: 390px !important;
+      overflow: hidden;
+    }
+
+    /* Toggle Switch Styles */
+    .dashboard-toggle {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 30px;
+      padding: 20px 0;
+      border-bottom: 2px solid #e0e0e0;
+    }
+
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      background-color: white;
+      border-radius: 25px;
+      padding: 4px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .toggle-option {
+      padding: 10px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #666;
+      background-color: transparent;
+      border: none;
+      outline: none;
+    }
+
+    .toggle-option.active {
+      background-color: rgb(45, 185, 164);
+      color: white;
+      box-shadow: 0 2px 6px rgba(45, 185, 164, 0.3);
+    }
+
+    .toggle-option:hover:not(.active) {
+      color: rgb(45, 185, 164);
+    }
+
+    /* View Containers */
+    .view-container {
+      display: none;
+    }
+
+    .view-container.active {
+      display: block;
+    }
+
+    .bridge-view {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+
+    .bridge-view h1 {
+      font-size: 32px;
+      margin-bottom: 30px;
+      color: rgb(45, 185, 164);
+    }
+
+    .bridge-controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .bridge-btn {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .bridge-btn.primary {
+      background-color: rgb(45, 185, 164);
+      color: white;
+    }
+
+    .bridge-btn.primary:hover:not(:disabled) {
+      background-color: rgb(35, 165, 144);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(45, 185, 164, 0.3);
+    }
+
+    .bridge-btn.secondary {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    .bridge-btn.secondary:hover:not(:disabled) {
+      background-color: #c0392b;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+    }
+
+    .bridge-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .bridge-content {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      height: 700px;
+    }
+
+    .map-container {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    #shipMap {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-overlays {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+    }
+
+    .wave-height-legend {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      min-width: 150px;
+    }
+
+    .wave-height-legend h4 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .legend-scale {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+    }
+
+    .legend-item span {
+      font-size: 12px;
+      color: #555;
+    }
+
+    .info-panels-grid {
+      display: grid;
+      grid-template-rows: repeat(4, 1fr);
+      gap: 15px;
+      overflow-y: auto;
+    }
+
+    .info-panel {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-panel h3 {
+      margin: 0 0 15px 0;
+      color: rgb(45, 185, 164);
+      font-size: 16px;
+      font-weight: 600;
+      border-bottom: 2px solid rgb(45, 185, 164);
+      padding-bottom: 8px;
+    }
+
+    .condition-group {
+      margin-bottom: 15px;
+    }
+
+    .condition-group h4 {
+      margin: 0 0 8px 0;
+      color: #333;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .condition-item, .position-item, .comfort-item, .recommendation-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .condition-item:last-child, .position-item:last-child {
+      border-bottom: none;
+    }
+
+    .label {
+      font-weight: 500;
+      color: #666;
+      font-size: 13px;
+    }
+
+    .value {
+      font-weight: 600;
+      color: #333;
+      font-size: 13px;
+    }
+
+    .comfort-zones {
+      margin: 15px 0;
+    }
+
+    .comfort-zone {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .zone-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .comfort-zone.acceptable .zone-indicator {
+      background-color: #27ae60;
+    }
+
+    .comfort-zone.caution .zone-indicator {
+      background-color: #f39c12;
+    }
+
+    .comfort-zone.warning .zone-indicator {
+      background-color: #e74c3c;
+    }
+
+    .comfort-recommendation {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 6px;
+      border-left: 4px solid rgb(45, 185, 164);
+      font-size: 13px;
+      color: #555;
+    }
+
+    .alert-status {
+      margin-top: 15px;
+    }
+
+    .alert-normal {
+      background: #d4edda;
+      color: #155724;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .alert-caution {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .alert-warning {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    /* Map marker styles */
+    .start-marker, .ship-marker {
+      background: transparent;
+      border: none;
+    }
+
+    /* Responsive design */
+    @media (max-width: 992px) {
+      .chart-row {
+        flex-direction: column;
+      }
+      .chart-box {
+        min-width: 100%;
+        margin-bottom: 20px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      #container {
+        width: 98%;
+        padding: 10px;
+      }
+      .chart-section, .jonswap-section {
+        padding: 20px;
+        margin-bottom: 30px;
+      }
+      #researchView h1 {
+        font-size: 24px;
+      }
+      #researchView h2 {
+        font-size: 20px;
+      }
+      #researchView h3 {
+        font-size: 16px;
+      }
+      .controls button {
+        padding: 10px 18px;
+        margin: 5px;
+        font-size: 14px;
+      }
+      
+      .bridge-content {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      
+      .map-container {
+        height: 400px;
+      }
+      
+      .info-panels-grid {
+        grid-template-rows: none;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      }
+      
+      .bridge-controls {
+        flex-direction: column;
+        align-items: center;
+      }
     }
   </style>
 </head>
 <body>
   <div id="container">
-    <!-- Sensor1 Live Data Section -->
-    <div class="chart-section">
-      <h1>Sensor1 Data</h1>
-      <div class="controls">
-        <button id="startBtn1">Start</button>
-        <button id="stopBtn1">Stop</button>
-      </div>
-      <div class="chart-row">
-        <div class="chart-box">
-          <h3>Wave Height</h3>
-          <canvas id="waveHeightChart" width="400" height="300"></canvas>
-        </div>
-        <div class="chart-box">
-          <h3>Wave Period</h3>
-          <canvas id="wavePeriodChart" width="400" height="300"></canvas>
-        </div>
-      </div>
-      <div class="chart-box" style="max-width: 600px; margin: 0 auto;">
-        <h3>Wave Direction</h3>
-        <canvas id="waveDirectionChart" width="600" height="300"></canvas>
+    <!-- Credit Section -->
+    <div id="dashboard-credit">
+      <h1>Vessel 4.0 ~ Motion Sickness Monitioring and Predictive Model for the SA Agulhas II</h1>
+      <p class="credit-authors">By Micaela Do Amaral Melim*, Henrique Gaspar*, Anriëtte Bekker and Nicole Catherine Taylor ~ June 2025</p>
+      <p class="credit-affiliations">Affiliations: <a href="https://www.sun.ac.za/english/faculty/eng/soundandvibrationresearchgroup">Sound and Vibration Research Group at Stellenbosch University</a>, <a href="https://www.ntnu.edu/sdo">Ship Design and Operation Lab at NTNU in Ålesund</a></p>
+      <p class="credit-corresponding">Corresponding Authors*: 21662673@sun.ac.za, henrique.gaspar@ntnu.no</p>
+    </div>
+    
+    <!-- Dashboard Toggle Switch -->
+    <div class="dashboard-toggle">
+      <div class="toggle-container">
+        <button class="toggle-option active" data-view="research">Research</button>
+        <button class="toggle-option" data-view="bridge">Bridge</button>
       </div>
     </div>
 
-      <!-- Jonswap live data section -->
-  <div class="chart-box" style="max-width: 900px; margin: 0 auto;">
-      <h3>JONSWAP Spectrum</h3>
-      <canvas id="jonswapChart" width="900" height="400"></canvas>
-  </div>
-
-    <!-- Sensor2 Live Data Section -->
-    <div class="chart-section">
-      <h1>Sensor2 Data</h1>
-      <div class="controls">
-        <button id="startBtn2">Start</button>
-        <button id="stopBtn2">Stop</button>
-      </div>
-      <div class="chart-row">
-        <div class="chart-box">
-          <h3>Vessel Heading</h3>
-          <canvas id="vesselHeadingChart" width="400" height="300"></canvas>
+    <!-- Research View Container -->
+    <div id="researchView" class="view-container active">
+      <!-- Wave Conditions Section -->
+      <div class="chart-section">
+        <h1>Wave Conditions (Sensor1 Data)</h1>
+        <div class="controls">
+          <button id="startBtn">Start Visualization</button>
+          <button id="stopBtn">Stop Visualization</button>
         </div>
-        <div class="chart-box">
-          <h3>Vessel Speed</h3>
-          <canvas id="vesselSpeedChart" width="400" height="300"></canvas>
+        <div class="chart-row">
+          <div class="chart-box">
+            <h3>Significant Wave Height (Hs)</h3>
+            <canvas id="waveHeightChart"></canvas>
+          </div>
+          <div class="chart-box">
+            <h3>Peak Wave Period (Tp)</h3>
+            <canvas id="wavePeriodChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-box full-width">
+            <h3>Mean Wave Direction</h3>
+            <canvas id="waveDirectionChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- JONSWAP Wave Spectrum Section -->
+      <div class="jonswap-section">
+        <h1>JONSWAP Wave Spectrum</h1>
+        <div class="chart-box jonswap-chart">
+          <canvas id="jonswapChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Vessel Performance Section -->
+      <div class="chart-section">
+        <h1>Vessel Performance (Sensor2 Data)</h1>
+        <div class="chart-row">
+          <div class="chart-box">
+            <h3>Vessel Heading</h3>
+            <canvas id="vesselHeadingChart"></canvas>
+          </div>
+          <div class="chart-box">
+            <h3>Vessel Speed</h3>
+            <canvas id="vesselSpeedChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Response Amplitude Operators Section -->
+      <div class="chart-section">
+        <h1>Response Amplitude Operators (RAO)</h1>
+        <div class="chart-row">
+          <div class="chart-box">
+            <h3>Heave Amplitude</h3>
+            <div id="heaveAmplitudeChart"></div>
+          </div>
+          <div class="chart-box">
+            <h3>Heave Phase</h3>
+            <div id="heavePhaseChart"></div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-box">
+            <h3>Pitch Amplitude</h3>
+            <div id="pitchAmplitudeChart"></div>
+          </div>
+          <div class="chart-box">
+            <h3>Pitch Phase</h3>
+            <div id="pitchPhaseChart"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Power Spectral Density Section -->
+      <div class="chart-section">
+        <h1>Power Spectral Density Analysis</h1>
+        <div class="chart-row">
+          <div class="chart-box psd-chart">
+            <h3>Combined PSD (Heave, Pitch, Cross)</h3>
+            <div id="combinedPSDChart"></div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-box psd-chart">
+            <h3>Total Vertical Motion PSD</h3>
+            <div id="verticalMotionPSDChart"></div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-box psd-chart">
+            <h3>Motion Sickness Dose Value (MSDV) by Ship Position</h3>
+            <div id="msdvChart"></div>
+          </div>
+        </div>
+      </div>
+    </div> <!-- Close Research View -->
+
+    <!-- Bridge View Container -->
+    <div id="bridgeView" class="view-container">
+      <div class="bridge-view">
+        <h1>Bridge Dashboard</h1>
+        
+        <!-- Control Buttons -->
+        <div class="bridge-controls">
+          <button id="startLiveDemoBtn" class="bridge-btn primary">Start Live Demo</button>
+          <button id="stopLiveDemoBtn" class="bridge-btn secondary" disabled>Stop Demo</button>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="bridge-content">
+          <!-- Map Container -->
+          <div class="map-container">
+            <div id="shipMap"></div>
+            <!-- Map Overlays -->
+            <div class="map-overlays">
+              <div class="wave-height-legend">
+                <h4>Wave Height</h4>
+                <div class="legend-scale">
+                  <div class="legend-item">
+                    <div class="legend-color" style="background-color: #006400;"></div>
+                    <span>0-1m</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-color" style="background-color: #32cd32;"></div>
+                    <span>1-2m</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-color" style="background-color: #ffd700;"></div>
+                    <span>2-3m</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-color" style="background-color: #ff8c00;"></div>
+                    <span>3-4m</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-color" style="background-color: #ff4500;"></div>
+                    <span>4m+</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Information Panels Grid -->
+          <div class="info-panels-grid">
+            <!-- Maritime Conditions Panel -->
+            <div class="info-panel conditions-panel">
+              <h3>Current Maritime Conditions</h3>
+              <div id="maritimeConditions">
+                <div class="condition-group">
+                  <h4>Wave Conditions</h4>
+                  <div class="condition-item">
+                    <span class="label">Significant Height:</span>
+                    <span id="waveHeight" class="value">--</span>
+                  </div>
+                  <div class="condition-item">
+                    <span class="label">Mean Period:</span>
+                    <span id="wavePeriod" class="value">--</span>
+                  </div>
+                  <div class="condition-item">
+                    <span class="label">Direction:</span>
+                    <span id="waveDirection" class="value">--</span>
+                  </div>
+                </div>
+                
+                <div class="condition-group">
+                  <h4>Vessel Data</h4>
+                  <div class="condition-item">
+                    <span class="label">Speed:</span>
+                    <span id="vesselSpeed" class="value">--</span>
+                  </div>
+                  <div class="condition-item">
+                    <span class="label">Heading:</span>
+                    <span id="vesselHeading" class="value">--</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ship Position Panel -->
+            <div class="info-panel position-panel">
+              <h3>Ship Position</h3>
+              <div id="shipPosition">
+                <div class="position-item">
+                  <span class="label">Latitude:</span>
+                  <span id="currentLat" class="value">--</span>
+                </div>
+                <div class="position-item">
+                  <span class="label">Longitude:</span>
+                  <span id="currentLon" class="value">--</span>
+                </div>
+                <div class="position-item">
+                  <span class="label">Time:</span>
+                  <span id="currentTime" class="value">--</span>
+                </div>
+                <div class="position-item">
+                  <span class="label">Route Points:</span>
+                  <span id="routePoints" class="value">0</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Crew Comfort Panel -->
+            <div class="info-panel comfort-panel">
+              <h3>Crew Comfort Analysis</h3>
+              <div id="comfortAnalysis">
+                <div class="comfort-item">
+                  <span class="label">MSDV (Midships):</span>
+                  <span id="msdvMidships" class="value">--</span>
+                </div>
+                <div class="comfort-zones">
+                  <div class="comfort-zone acceptable">
+                    <div class="zone-indicator"></div>
+                    <span>Acceptable (&lt;0.5 m/s²)</span>
+                  </div>
+                  <div class="comfort-zone caution">
+                    <div class="zone-indicator"></div>
+                    <span>Caution (0.5-1.0 m/s²)</span>
+                  </div>
+                  <div class="comfort-zone warning">
+                    <div class="zone-indicator"></div>
+                    <span>Warning (&gt;1.0 m/s²)</span>
+                  </div>
+                </div>
+                <div class="comfort-recommendation">
+                  <span id="comfortRecommendation">Monitoring conditions...</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Navigation Recommendations Panel -->
+            <div class="info-panel recommendations-panel">
+              <h3>Navigation Recommendations</h3>
+              <div id="navigationRecommendations">
+                <div class="recommendation-item">
+                  <strong>Optimal Speed:</strong>
+                  <span id="optimalSpeed">Calculating...</span>
+                </div>
+                <div class="recommendation-item">
+                  <strong>Recommended Heading:</strong>
+                  <span id="recommendedHeading">Calculating...</span>
+                </div>
+                <div class="recommendation-item">
+                  <strong>Forecast:</strong>
+                  <span id="forecast">Analyzing conditions...</span>
+                </div>
+                <div class="alert-status">
+                  <div id="alertStatus" class="alert-normal">
+                    Normal Operations
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- RAO Section -->
-    <div class="chart-section">
-      <h1>Response Amplitude Operators (RAO)</h1>
-      <div class="chart-row">
-        <div class="chart-box">
-          <h3>Heave Amplitude</h3>
-          <div id="heaveAmplitudeChart"></div>
-        </div>
-        <div class="chart-box">
-          <h3>Heave Phase</h3>
-          <div id="heavePhaseChart"></div>
-        </div>
-      </div>
-      <div class="chart-row">
-        <div class="chart-box">
-          <h3>Pitch Amplitude</h3>
-          <div id="pitchAmplitudeChart"></div>
-        </div>
-        <div class="chart-box">
-          <h3>Pitch Phase</h3>
-          <div id="pitchPhaseChart"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- JONSWAP Spectrum Section -->
-    <h1 id="mainTitle"></h1>
-    <h2 id="subTitle"></h2>
-    <canvas id="spectrumChart" width="900" height="400"></canvas>
   </div> <!-- Close container -->
   
   <script>
@@ -177,8 +934,10 @@
     // Initialize charts
     let waveHeightChart, wavePeriodChart, waveDirectionChart;
     let vesselHeadingChart, vesselSpeedChart;
-    let streamingInterval1 = null;
-    let streamingInterval2 = null;
+    let streamingInterval = null;
+    let sensor1UpdateCounter = 0;
+    const UPDATE_INTERVAL = 100; // 5 minutes in milliseconds
+    const HOURLY_UPDATES = 12; // Number of 5-min updates before fetching new hourly data
 
     function initializeSensor1Charts() {
       // Initialize JONSWAP spectrum
@@ -190,6 +949,28 @@
         type: 'line',
         options: {
           responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            intersect: false,
+          },
+          layout: {
+            padding: {
+              left: 10,
+              right: 10,
+              top: 10,
+              bottom: 10
+            }
+          },
+          elements: {
+            point: {
+              radius: 3,
+              hoverRadius: 5
+            },
+            line: {
+              tension: 0.1,
+              borderWidth: 2
+            }
+          },
           scales: {
             x: {
               type: 'time',
@@ -199,17 +980,27 @@
                   hour: 'MMM d, HH:mm'
                 }
               },
-              title: { display: true, text: 'Time' }
+              title: { display: true, text: 'Time' },
+              grid: { display: true, drawBorder: true },
+              ticks: {
+                maxRotation: 45,
+                autoSkip: true,
+                maxTicksLimit: 8
+              }
             },
             y: {
               beginAtZero: false,
-              grid: { display: true }
+              grid: { display: true, drawBorder: true },
+              ticks: {
+                padding: 5
+              }
             }
           },
           plugins: {
             legend: { display: false }
           },
-          animation: false
+          animation: false,
+          clip: true
         }
       };
 
@@ -270,6 +1061,28 @@
         type: 'line',
         options: {
           responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            intersect: false,
+          },
+          layout: {
+            padding: {
+              left: 10,
+              right: 10,
+              top: 10,
+              bottom: 10
+            }
+          },
+          elements: {
+            point: {
+              radius: 3,
+              hoverRadius: 5
+            },
+            line: {
+              tension: 0.1,
+              borderWidth: 2
+            }
+          },
           scales: {
             x: {
               type: 'time',
@@ -279,17 +1092,27 @@
                   hour: 'MMM d, HH:mm'
                 }
               },
-              title: { display: true, text: 'Time' }
+              title: { display: true, text: 'Time' },
+              grid: { display: true, drawBorder: true },
+              ticks: {
+                maxRotation: 45,
+                autoSkip: true,
+                maxTicksLimit: 8
+              }
             },
             y: {
               beginAtZero: false,
-              grid: { display: true }
+              grid: { display: true, drawBorder: true },
+              ticks: {
+                padding: 5
+              }
             }
           },
           plugins: {
             legend: { display: false }
           },
-          animation: false
+          animation: false,
+          clip: true
         }
       };
 
@@ -351,443 +1174,209 @@
       );
     }
 
-    function updateSensor1Charts(reading) {
-      if (!reading) return;
+    // Shared function to update all visualizations
+    function updateAllVisualizations(sensor1Reading, sensor2Reading) {
+        if (sensor1Reading) {
+            const time = sensor1Reading.timestamp;
 
-      const time = reading.timestamp;
+            // Update wave height
+            waveHeightChart.data.datasets[0].data.push({
+                x: time,
+                y: sensor1Reading.waveHeight
+            });
+            if (waveHeightChart.data.datasets[0].data.length > 24) {
+                waveHeightChart.data.datasets[0].data.shift();
+            }
+            
+            // Update wave period
+            wavePeriodChart.data.datasets[0].data.push({
+                x: time,
+                y: sensor1Reading.wavePeriod
+            });
+            if (wavePeriodChart.data.datasets[0].data.length > 24) {
+                wavePeriodChart.data.datasets[0].data.shift();
+            }
+            
+            // Update wave direction
+            waveDirectionChart.data.datasets[0].data.push({
+                x: time,
+                y: sensor1Reading.waveDirection
+            });
+            if (waveDirectionChart.data.datasets[0].data.length > 24) {
+                waveDirectionChart.data.datasets[0].data.shift();
+            }
 
-      // Update wave height
-      waveHeightChart.data.datasets[0].data.push({
-        x: time,
-        y: reading.waveHeight
-      });
-      if (waveHeightChart.data.datasets[0].data.length > 24) {
-        waveHeightChart.data.datasets[0].data.shift();
-      }
-      
-      // Update wave period
-      wavePeriodChart.data.datasets[0].data.push({
-        x: time,
-        y: reading.wavePeriod
-      });
-      if (wavePeriodChart.data.datasets[0].data.length > 24) {
-        wavePeriodChart.data.datasets[0].data.shift();
-      }
-      
-      // Update wave direction
-      waveDirectionChart.data.datasets[0].data.push({
-        x: time,
-        y: reading.waveDirection
-      });
-      if (waveDirectionChart.data.datasets[0].data.length > 24) {
-        waveDirectionChart.data.datasets[0].data.shift();
-      }
+            // Update JONSWAP spectrum
+            sensor1.jonswapSpectrum.update(sensor1Reading);
+            // Also update the global window instance
+            if (window.jonswapSpectrum) {
+                window.jonswapSpectrum.update(sensor1Reading);
+            }
+        }
 
-      // Update JONSWAP spectrum with the full reading object (including timestamp)
-      sensor1.jonswapSpectrum.update(reading);
+        if (sensor2Reading) {
+            const time = sensor2Reading.timestamp;
 
-      // Update all charts
-      waveHeightChart.update('none');
-      wavePeriodChart.update('none');
-      waveDirectionChart.update('none');
+            // Update vessel heading
+            vesselHeadingChart.data.datasets[0].data.push({
+                x: time,
+                y: sensor2Reading.heading
+            });
+            if (vesselHeadingChart.data.datasets[0].data.length > 24) {
+                vesselHeadingChart.data.datasets[0].data.shift();
+            }
+            
+            // Update vessel speed
+            vesselSpeedChart.data.datasets[0].data.push({
+                x: time,
+                y: sensor2Reading.speed
+            });
+            if (vesselSpeedChart.data.datasets[0].data.length > 24) {
+                vesselSpeedChart.data.datasets[0].data.shift();
+            }
+
+            // Update RAO charts if initialized
+            if (window.raoVisualizer) {
+                window.raoVisualizer.updateCharts(sensor2Reading.speed, sensor2Reading.heading);
+            }
+
+            // Update PSD charts if initialized
+            if (window.powerSpectralDensity) {
+                window.powerSpectralDensity.updatePSDs(sensor2Reading.speed, sensor2Reading.heading);
+            }
+        }
+
+        // Update all chart displays at once
+        if (waveHeightChart) waveHeightChart.update('none');
+        if (wavePeriodChart) wavePeriodChart.update('none');
+        if (waveDirectionChart) waveDirectionChart.update('none');
+        if (vesselHeadingChart) vesselHeadingChart.update('none');
+        if (vesselSpeedChart) vesselSpeedChart.update('none');
     }
 
-    function updateSensor2Charts(reading) {
-      if (!reading) return;
-
-      const time = reading.timestamp;
-
-      // Update vessel heading
-      vesselHeadingChart.data.datasets[0].data.push({
-        x: time,
-        y: reading.heading
-      });
-      if (vesselHeadingChart.data.datasets[0].data.length > 24) {
-        vesselHeadingChart.data.datasets[0].data.shift();
-      }
-      
-      // Update vessel speed
-      vesselSpeedChart.data.datasets[0].data.push({
-        x: time,
-        y: reading.speed
-      });
-      if (vesselSpeedChart.data.datasets[0].data.length > 24) {
-        vesselSpeedChart.data.datasets[0].data.shift();
-      }
-
-      // Update all charts
-      vesselHeadingChart.update('none');
-      vesselSpeedChart.update('none');
-
-      // Update RAO charts if initialized
-      if (window.raoVisualizer) {
-        window.raoVisualizer.updateCharts(reading.speed, reading.heading);
-      }
-    }
-
-    // Start/Stop button handlers for Sensor1
-    document.getElementById('startBtn1').addEventListener('click', async function() {
-      if (!streamingInterval1) {
-        this.disabled = true;
-        document.getElementById('stopBtn1').disabled = false;
-        
-        console.log('Loading sensor1 data...');
-        const success = await sensor1.loadData();
-        
-        if (success) {
-          streamingInterval1 = sensor1.startStreaming(updateSensor1Charts, 500);
-        } else {
-          this.disabled = false;
-          document.getElementById('stopBtn1').disabled = true;
-          alert('Failed to load sensor1 data');
+    // Single start/stop button handler
+    document.getElementById('startBtn').addEventListener('click', async function() {
+        if (!streamingInterval) {
+            this.disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            
+            console.log('Loading sensor data...');
+            const success1 = await sensor1.loadData();
+            const success2 = await sensor2.loadData();
+            
+            if (success1 && success2) {
+                // Initial update with both sensors
+                const sensor1Data = sensor1.getNextReading(true);
+                const sensor2Data = sensor2.getNextReading();
+                updateAllVisualizations(sensor1Data, sensor2Data);
+                
+                // Set up synchronized intervals
+                streamingInterval = setInterval(() => {
+                    const sensor2Reading = sensor2.getNextReading();
+                    
+                    // Only get new sensor1 reading every hour (12 updates)
+                    let sensor1Reading = null;
+                    if (sensor1UpdateCounter >= HOURLY_UPDATES - 1) {
+                        sensor1Reading = sensor1.getNextReading(true);
+                        sensor1UpdateCounter = 0;
+                    } else {
+                        sensor1Reading = sensor1.getNextReading(false);
+                        sensor1UpdateCounter++;
+                    }
+                    
+                    updateAllVisualizations(sensor1Reading, sensor2Reading);
+                }, UPDATE_INTERVAL);
+            } else {
+                this.disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+                alert('Failed to load sensor data');
+            }
         }
-      }
     });
 
-    document.getElementById('stopBtn1').addEventListener('click', function() {
-      if (streamingInterval1) {
-        clearInterval(streamingInterval1);
-        streamingInterval1 = null;
-        this.disabled = true;
-        document.getElementById('startBtn1').disabled = false;
-      }
-    });
-
-    // Start/Stop button handlers for Sensor2
-    document.getElementById('startBtn2').addEventListener('click', async function() {
-      if (!streamingInterval2) {
-        this.disabled = true;
-        document.getElementById('stopBtn2').disabled = false;
-        
-        console.log('Loading sensor2 data...');
-        const success = await sensor2.loadData();
-        
-        if (success) {
-          streamingInterval2 = sensor2.startStreaming(updateSensor2Charts, 500); // 5-minute interval
-        } else {
-          this.disabled = false;
-          document.getElementById('stopBtn2').disabled = true;
-          alert('Failed to load sensor2 data');
+    document.getElementById('stopBtn').addEventListener('click', function() {
+        if (streamingInterval) {
+            clearInterval(streamingInterval);
+            streamingInterval = null;
+            this.disabled = true;
+            document.getElementById('startBtn').disabled = false;
+            sensor1UpdateCounter = 0;
         }
-      }
-    });
-
-    document.getElementById('stopBtn2').addEventListener('click', function() {
-      if (streamingInterval2) {
-        clearInterval(streamingInterval2);
-        streamingInterval2 = null;
-        this.disabled = true;
-        document.getElementById('startBtn2').disabled = false;
-      }
     });
 
     // Initialize all charts
     initializeSensor1Charts();
     initializeSensor2Charts();
-    document.getElementById('stopBtn1').disabled = true;
-    document.getElementById('stopBtn2').disabled = true;
+    document.getElementById('stopBtn').disabled = true;
 
     // Initialize RAO Visualizer
     if (window.raoVisualizer) {
         window.raoVisualizer.init();
     }
 
-    // Initialize titles
-    document.getElementById('mainTitle').innerText = 'JONSWAP Wave Spectrum';
-    document.getElementById('subTitle').innerText = 
-      `Hₛ = ${Hs.toFixed(2)} m, Tₚ = ${Tp.toFixed(2)} s, DateTime = ${timeStamp}`;
-
-    // JONSWAP Spectrum Chart
-    new Chart(document.getElementById('spectrumChart').getContext('2d'), {
-      type: 'line',
-      data: {
-        datasets: [{
-          data: spectrumData,
-          borderColor: 'blue',
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: false
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: {
-            type: 'linear',
-            position: 'bottom',
-            title: { 
-              display: true, 
-              text: 'Angular Frequency ω [rad/s]', 
-              font: { size: 14 } 
-            }
-          },
-          y: {
-            title: { 
-              display: true, 
-              text: 'Spectral Density S(ω) [m²/(rad/s)]', 
-              font: { size: 14 } 
-            }
-          }
-        },
-        plugins: {
-          legend: { display: false },
-          annotation: {
-            annotations: [{
-              type: 'line',
-              xMin: peakOmega,
-              xMax: peakOmega,
-              borderColor: 'black',
-              borderWidth: 1,
-              borderDash: [5, 5],
-              label: {
-                display: true,
-                content: `ωₚ = ${peakOmega.toFixed(2)} rad/s`,
-                position: 'end'
-              }
-            }]
-          }
-        }
-      }
-    });
-
-    // Heave RAO Amplitude Chart
-    new Chart(document.getElementById('raoAmpChart').getContext('2d'), {
-      type: 'line',
-      data: {
-        datasets: [{
-          label: 'Amplitude',
-          data: raoAmplitudeData,
-          borderColor: 'green',
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: false
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: {
-            type: 'linear',
-            title: { display: true, text: 'Frequency ω [rad/s]' }
-          },
-          y: {
-            title: { display: true, text: 'Amplitude [m/m]' }
-          }
-        }
-      }
-    });
-
-    // Heave RAO Phase Chart
-    new Chart(document.getElementById('raoPhaseChart').getContext('2d'), {
-      type: 'line',
-      data: {
-        datasets: [{
-          label: 'Phase',
-          data: raoPhaseData,
-          borderColor: 'red',
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: false
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: {
-            type: 'linear',
-            title: { display: true, text: 'Frequency ω [rad/s]' }
-          },
-          y: {
-            title: { display: true, text: 'Phase [°]' }
-          }
-        }
-      }
-    });
-
-    // Pitch RAO Amplitude Chart
-    new Chart(document.getElementById('raoPitchAmpChart').getContext('2d'), {
-      type: 'line',
-      data: {
-        datasets: [{
-          label: 'Pitch Amplitude',
-          data: raoPitchAmplitudeData,
-          borderColor: 'purple',
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: false
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: {
-            type: 'linear',
-            title: { display: true, text: 'Frequency ω [rad/s]' }
-          },
-          y: {
-            title: { display: true, text: 'Amplitude [rad/(rad)]' }
-          }
-        }
-      }
-    });
-
-    // Pitch RAO Phase Chart
-    new Chart(document.getElementById('raoPitchPhaseChart').getContext('2d'), {
-      type: 'line',
-      data: {
-        datasets: [{
-          label: 'Pitch Phase',
-          data: raoPitchPhaseData,
-          borderColor: 'orange',
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: false
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: {
-            type: 'linear',
-            title: { display: true, text: 'Frequency ω [rad/s]' }
-          },
-          y: {
-            title: { display: true, text: 'Phase [°]' }
-          }
-        }
-      }
-    });
-
-    // Vertical PSD Chart
-    new Chart(document.getElementById('verticalPSDChart').getContext('2d'), {
-      type: 'line',
-      data: {
-        datasets: [
-          {
-            label: 'L = -30 m',
-            data: verticalPSDDataMinus30,
-            borderColor: 'blue',
-            borderWidth: 2,
-            pointRadius: 0,
-            fill: false
-          },
-          {
-            label: 'L = -15 m',
-            data: verticalPSDDataMinus15,
-            borderColor: 'orange',
-            borderWidth: 2,
-            pointRadius: 0,
-            fill: false
-          },
-          {
-            label: 'L = 0 m',
-            data: verticalPSDData0,
-            borderColor: 'gold',
-            borderWidth: 2,
-            pointRadius: 0,
-            fill: false
-          },
-          {
-            label: 'L = 15 m',
-            data: verticalPSDData15,
-            borderColor: 'purple',
-            borderWidth: 2,
-            pointRadius: 0,
-            fill: false
-          },
-          {
-            label: 'L = 30 m',
-            data: verticalPSDData30,
-            borderColor: 'green',
-            borderWidth: 2,
-            pointRadius: 0,
-            fill: false
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          title: {
-            display: true,
-            text: timeStamp,
-            font: { size: 18 }
-          },
-          legend: {
-            display: true,
-            position: 'top'
-          }
-        },
-        scales: {
-          x: {
-            type: 'linear',
-            title: { 
-              display: true, 
-              text: 'ω (rad/s)', 
-              font: { size: 14 } 
-            }
-          },
-          y: {
-            title: { 
-              display: true, 
-              text: 'PSD (m²/s⁵)', 
-              font: { size: 14 } 
-            }
-          }
-        }
-      }
-    });
-
-    // MSDV Bar Chart
-    new Chart(document.getElementById('msdvBarChart').getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: msdvPositions,
-        datasets: [{
-          label: 'MSDV_L',
-          data: msdvValues,
-          barThickness: 20,
-          backgroundColor: msdvPositions.map(pos => {
-            if (pos === '15 m' || pos === '-15 m') return 'rgba(255, 99, 132, 0.8)';
-            if (pos === '30 m' || pos === '-30 m') return 'rgba(54, 162, 235, 0.8)';
-            return 'rgba(255, 206, 86, 0.8)';
-          })
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          title: {
-            display: true,
-            text: timeStamp,
-            font: { size: 18 }
-          },
-          legend: { display: false }
-        },
-        scales: {
-          x: {
-            title: { 
-              display: true, 
-              text: 'Position relative to COG', 
-              font: { size: 14 } 
-            }
-          },
-          y: {
-            title: { 
-              display: true, 
-              text: 'MSDV_L', 
-              font: { size: 14 } 
-            },
-            beginAtZero: true
-          }
-        }
-      }
-    });
-
     // Initialize the RAO visualizer when the page loads
     document.addEventListener('DOMContentLoaded', () => {
       raoVisualizer.init();
+      
+      // Initialize dashboard toggle functionality
+      initializeDashboardToggle();
+      
+      // Initialize bridge dashboard controls
+      initializeBridgeControls();
     });
+
+    // Bridge Dashboard Controls
+    function initializeBridgeControls() {
+      const startBtn = document.getElementById('startLiveDemoBtn');
+      const stopBtn = document.getElementById('stopLiveDemoBtn');
+      
+      if (startBtn) {
+        startBtn.addEventListener('click', () => {
+          if (window.bridgeDashboard) {
+            window.bridgeDashboard.startLiveDemo();
+          }
+        });
+      }
+      
+      if (stopBtn) {
+        stopBtn.addEventListener('click', () => {
+          if (window.bridgeDashboard) {
+            window.bridgeDashboard.stopLiveDemo();
+          }
+        });
+      }
+    }
+
+    // Dashboard Toggle Functionality
+    function initializeDashboardToggle() {
+      const toggleOptions = document.querySelectorAll('.toggle-option');
+      const viewContainers = document.querySelectorAll('.view-container');
+
+      toggleOptions.forEach(option => {
+        option.addEventListener('click', () => {
+          const targetView = option.dataset.view;
+          
+          // Update toggle button states
+          toggleOptions.forEach(btn => btn.classList.remove('active'));
+          option.classList.add('active');
+          
+          // Update view visibility
+          viewContainers.forEach(container => {
+            container.classList.remove('active');
+          });
+          
+          const targetContainer = document.getElementById(targetView + 'View');
+          if (targetContainer) {
+            targetContainer.classList.add('active');
+          }
+          
+          // Update page title based on active view
+          document.title = targetView === 'research' 
+            ? 'JONSWAP Wave Spectrum & RAO - Research Dashboard'
+            : 'Ship Bridge Dashboard';
+        });
+      });
+    }
   </script>
 </body>
 </html>
