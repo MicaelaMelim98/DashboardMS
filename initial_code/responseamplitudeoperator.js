@@ -9,7 +9,7 @@ class RAOVisualizer {
             pitchAmplitude: null,
             pitchPhase: null
         };
-        this.RAO_BASE_PATH = 'SAAII_RAOs copy';
+        this.RAO_BASE_PATH = '.';
         // Add storage for latest RAO data
         this.latestHeaveData = null;
         this.latestPitchData = null;
@@ -145,7 +145,7 @@ class RAOVisualizer {
         // Extract just the number for the filename
         const speedInt = parseInt(speedFolder);
         const filename = `${type}_${speedInt}.rao`;
-        const filepath = `${this.RAO_BASE_PATH}/${speedFolder}/${filename}`;
+        const filepath = `${this.RAO_BASE_PATH}/${filename}`;
         console.log(`Attempting to load RAO file: ${filepath}`);
         try {
             const response = await fetch(filepath);
