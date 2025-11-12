@@ -1,9 +1,17 @@
 # MSDV Combined Plot - Usage Guide
 
 ## Overview
-This document explains how to use the `plot_msdv_combined.m` script to generate thesis-ready plots of MSDV (Motion Sickness Dose Value) in the frequency domain versus time for multiple distances.
+This document explains how to use the MSDV combined plotting scripts to generate thesis-ready plots of MSDV (Motion Sickness Dose Value) in the frequency domain versus time for multiple distances.
 
-## Script: `plot_msdv_combined.m`
+## Two Script Versions
+
+### 1. `plot_msdv_combined.m` (Markers Only)
+Best for when you want to emphasize individual data points without visual clutter from connecting lines.
+
+### 2. `plot_msdv_combined_with_lines.m` (Markers + Lines)
+Best for showing trends over time with connecting lines between data points. Recommended for time-series analysis.
+
+## Script: `plot_msdv_combined.m` (Markers Only)
 
 ### Purpose
 Creates a single combined plot showing MSDV (Frequency Domain) vs Time for six different longitudinal positions on the vessel:
@@ -94,15 +102,42 @@ Each distance has a unique marker shape:
 - All output files are saved at 300 DPI for high-quality printing
 - The PDF is optimized with a 14" x 5.5" paper size to prevent label clipping
 
-### Comparison with Individual Plots
-This script complements the existing `analyze_msdv_data_individual.m` script:
-- **Individual script**: Creates separate plots for GT vs Comp at each position
-- **Combined script**: Shows all Comp (frequency domain) values on one plot for trend analysis
+### Script: `plot_msdv_combined_with_lines.m` (Markers + Lines)
 
-Use this combined plot when you want to:
+This version is identical to the markers-only version, except it includes connecting lines between data points. Use this version when you want to emphasize temporal trends.
+
+#### Running the script
+```matlab
+plot_msdv_combined_with_lines
+```
+
+#### Output files
+Saves to `MSDV_Figures_Combined` directory:
+- `MSDV_FreqDomain_vs_Time_Combined_WithLines.png`
+- `MSDV_FreqDomain_vs_Time_Combined_WithLines.pdf`
+- `MSDV_FreqDomain_vs_Time_Combined_WithLines.eps`
+
+### Comparison with Individual Plots
+These combined scripts complement the existing `analyze_msdv_data_individual.m` script:
+- **Individual script**: Creates separate plots for GT vs Comp at each position
+- **Combined scripts**: Show all Comp (frequency domain) values on one plot for trend analysis
+
+Use these combined plots when you want to:
 - Compare MSDV trends across different longitudinal positions
 - Show how motion sickness dose varies with distance from midship
 - Present a comprehensive overview in your thesis
+
+### Which Version Should I Use?
+
+**Use `plot_msdv_combined.m` (Markers Only) when:**
+- You have many overlapping data points
+- You want to emphasize individual measurements
+- The plot looks too busy with lines
+
+**Use `plot_msdv_combined_with_lines.m` (Markers + Lines) when:**
+- You want to show temporal progression clearly
+- Your data points are well-spaced
+- You want to emphasize trends over time
 
 ### Troubleshooting
 
